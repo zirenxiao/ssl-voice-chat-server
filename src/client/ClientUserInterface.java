@@ -1,14 +1,20 @@
 package client;
 
+
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-import javax.swing.JCheckBox;
+
 import javax.swing.JFrame;
-import javax.swing.JLabel;
+
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 
 import io.netty.channel.Channel;
 import utility.Recorder;
@@ -17,43 +23,76 @@ import utility.Recorder;
 public class ClientUserInterface extends JFrame{
 	private static final long serialVersionUID = 2361313703736003082L;
 
-	private JCheckBox doActivity = new JCheckBox("语音开关");
-	private JLabel status = new JLabel("");
-	private JLabel serverStatus = new JLabel("");
+	private JMenuItem voiceSwitch = new JMenuItem("语音开关");
 	private Recorder re = null;
 	private Channel ch = null;
+	private static JTextArea ta = new JTextArea(10,40);
+	private static JFrame f = new JFrame("SSL Voice Communication");
+	private boolean voiceStatus = false;
 
-	public ClientUserInterface(Channel channel){	
-		this.ch = channel;
-		setLayout(new GridLayout(3,1));
-		add(doActivity);
-		add(serverStatus);
-		add(status);
-
+	public ClientUserInterface(){	
+		f.setLayout(new GridLayout(1,0));
 		
-		doActivity.addActionListener(new ActionListener(){
+		// set text area
+		ta.setEditable(false);
+		ta.setLineWrap(true);
+		
+		// add menu
+		JMenu menu = new JMenu("选项");
+		JMenuItem closeApp = new JMenuItem("退出");
+		menu.add(voiceSwitch);
+		menu.add(closeApp);
+		JMenuBar mb = new JMenuBar();
+		mb.add(menu);
+		f.setJMenuBar(mb);
+		
+		f.add(new JScrollPane(ta));
+		
+		
+		voiceSwitch.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
-				if (doActivity.isSelected()) {
-					status.setText("语音打开");
+				if (!voiceStatus) {
+					setMessage("[self] 打开麦克风");
 					re = new Recorder(ch);
+					voiceStatus = true;
 				}else {
-					status.setText("语音关闭");
+					setMessage("[self] 关闭麦克风");
+					voiceStatus = false;
 					re.stop();
 				}
 				
 			}
 		});
 		
-		this.addWindowListener(new WindowAdapter(){
-			public void windowClosing(WindowEvent e){
-				ch.close();
-				System.exit(0);
+		closeApp.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e){
+				exitApp();
 			}
 		});
 		
-		pack();
-		setLocationRelativeTo(null);
-		setVisible(true);
-	}
+		f.addWindowListener(new WindowAdapter(){
+			public void windowClosing(WindowEvent e){
+				exitApp();
+			}
+		});
+		
+		f.pack();
+		f.setLocationRelativeTo(null);
+		f.setVisible(true);
 
+	}
+	
+	public void init(Channel channel){	
+		ch = channel;
+	}
+	
+	private void exitApp() {
+//		ch.close();
+		Client.group.shutdownGracefully();
+		System.exit(0);
+	}
+	
+	public static void setMessage(String msg) {
+		ta.setText(ta.getText() + msg + "\n");
+	}
 }

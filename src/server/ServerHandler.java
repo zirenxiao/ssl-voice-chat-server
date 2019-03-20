@@ -17,6 +17,8 @@ package server;
 
 import java.net.InetAddress;
 
+import org.json.simple.JSONObject;
+
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -26,6 +28,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import utility.Settings;
 
 /**
  * Handles a server-side channel.
@@ -43,13 +46,13 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
                     @Override
                     public void operationComplete(Future<Channel> future) throws Exception {
                         ctx.writeAndFlush(
-                                "Welcome to " + InetAddress.getLocalHost().getHostName() + " secure chat service!\n");
+                        		ctServerMessage("Welcome to " + InetAddress.getLocalHost().getHostName() + " secure chat service!")+ "\n");
                         ctx.writeAndFlush(
-                                "Your session is protected by " +
+                        		ctServerMessage("Your session is protected by " +
                                         ctx.pipeline().get(SslHandler.class).engine().getSession().getCipherSuite() +
-                                        " cipher suite.\n");
-
+                                        " cipher suite.") + "\n");
                         channels.add(ctx.channel());
+                        sendToAll(ctx, ctServerMessage("新连接["+ctx.channel().id()+"]已加入。当前有" + channels.size() + "个在线连接。"), ctServerMessage("当前有" + channels.size() + "个在线连接。"));
                     }
         });
     }
@@ -58,24 +61,53 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
     public void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
         // Send the received message to all channels but the current one.
 //    	System.err.println(msg);
-        for (Channel c: channels) {
-            if (c != ctx.channel()) {
-                c.writeAndFlush("[" + ctx.channel().remoteAddress() + "] " + msg + '\n');    	
-            } else {
-//                c.writeAndFlush("[you] " + msg + '\n');
-            	c.writeAndFlush(msg + '\n');
-            }
-        }
+    	
+    	JSONObject content = Settings.JSONcheck(msg);
+        if (content!=null) {
+			String stringContent = content.get(Settings.COMMAND).toString();
+			if (stringContent.equals(Settings.TYPEAUDIO)) {
+				// if it is audio message
+				this.sendToAll(ctx, msg, null);
+			}else if (stringContent.equals(Settings.TYPECLIENTMSG)) {
+				
+			}
+		}
+    	
+    	
+        
 
         // Close the connection if the client has sent 'bye'.
-        if ("bye".equals(msg.toLowerCase())) {
-            ctx.close();
-        }
+//        if ("bye".equals(msg.toLowerCase())) {
+//            ctx.close();
+//        }
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
         ctx.close();
+    }
+    
+    @SuppressWarnings("unchecked")
+	private String ctServerMessage(String msg) {
+		JSONObject obj = new JSONObject();
+		obj.put(Settings.MESSAGE, msg);
+		obj.put(Settings.COMMAND, Settings.TYPESERVERMSG);
+		return obj.toJSONString();
+	}
+    
+    private void sendToAll(ChannelHandlerContext ctx, String msgToOthers, String msgToEcho) {
+    	for (Channel c: channels) {
+            if (c != ctx.channel()) {
+//                c.writeAndFlush("[" + ctx.channel().remoteAddress() + "] " + msg + '\n');
+                c.writeAndFlush(msgToOthers + '\n');
+            } else {
+//                c.writeAndFlush("[you] " + msg + '\n');
+            	if (msgToEcho!=null) {
+            		c.writeAndFlush(msgToEcho + '\n');
+            	}
+            	
+            }
+        }
     }
 }
