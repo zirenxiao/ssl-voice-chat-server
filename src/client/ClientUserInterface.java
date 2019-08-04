@@ -7,7 +7,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 
 import javax.swing.JMenu;
@@ -20,10 +20,10 @@ import io.netty.channel.Channel;
 import utility.Recorder;
 
 
-public class ClientUserInterface extends JFrame{
+public class ClientUserInterface {
 	private static final long serialVersionUID = 2361313703736003082L;
 
-	private JMenuItem voiceSwitch = new JMenuItem("语音开关");
+	private JMenuItem voiceSwitch = new JMenuItem("Voice Switch");
 	private Recorder re = null;
 	private Channel ch = null;
 	private static JTextArea ta = new JTextArea(10,40);
@@ -38,8 +38,8 @@ public class ClientUserInterface extends JFrame{
 		ta.setLineWrap(true);
 		
 		// add menu
-		JMenu menu = new JMenu("选项");
-		JMenuItem closeApp = new JMenuItem("退出");
+		JMenu menu = new JMenu("Menu");
+		JMenuItem closeApp = new JMenuItem("Exit");
 		menu.add(voiceSwitch);
 		menu.add(closeApp);
 		JMenuBar mb = new JMenuBar();
@@ -52,11 +52,11 @@ public class ClientUserInterface extends JFrame{
 		voiceSwitch.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
 				if (!voiceStatus) {
-					setMessage("[self] 打开麦克风");
+					setMessage("[self] Open Mic");
 					re = new Recorder(ch);
 					voiceStatus = true;
 				}else {
-					setMessage("[self] 关闭麦克风");
+					setMessage("[self] Close Mic");
 					voiceStatus = false;
 					re.stop();
 				}
@@ -79,7 +79,6 @@ public class ClientUserInterface extends JFrame{
 		f.pack();
 		f.setLocationRelativeTo(null);
 		f.setVisible(true);
-
 	}
 	
 	public void init(Channel channel){	

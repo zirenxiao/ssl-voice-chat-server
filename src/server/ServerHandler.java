@@ -52,7 +52,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<String> {
                                         ctx.pipeline().get(SslHandler.class).engine().getSession().getCipherSuite() +
                                         " cipher suite.") + "\n");
                         channels.add(ctx.channel());
-                        sendToAll(ctx, ctServerMessage("新连接["+ctx.channel().id()+"]已加入。当前有" + channels.size() + "个在线连接。"), ctServerMessage("当前有" + channels.size() + "个在线连接。"));
+                        sendToAll(ctx, ctServerMessage("New connection ["+ctx.channel().id()+"]. Total Connections: " + channels.size() + "."), ctServerMessage("Total Connctions:" + channels.size()));
                     }
         });
     }
